@@ -1,195 +1,158 @@
 openapi: 3.0.2
 info:
-  title: 'StatusHistory'
-  version: ''
+  title: Status History
+  description: Инструмент для хранения и анализа истории изменения статусов сервисов.
+  version: 0.1.0
+
 paths:
   /api/services/:
     get:
-      description: 'Список сервисов.'
-      parameters: []
+      tags:
+        - Сервисы
+      summary: Список сервисов
+      description: Возвращает полный список всех зарегистрированных сервисов.
       responses:
         '200':
+          description: Успешный ответ
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Services'
-          description: ''
+                  $ref: '#/components/schemas/Service'
+    post:
       tags:
         - Сервисы
-    post:
-      description: 'Создание сервиса.'
-      parameters:
-        - name: name
-          required: true
-          in: query
-          description: 'Название сервиса'
-          example: 'Крутой сервис'
-          schema:
-            type: string
-        - name: description
-          required: true
-          in: query
-          description: 'Описание сервиса'
-          example: 'Описание крутого сервиса'
-          schema:
-            type: string
-        - name: status
-          required: false
-          in: query
-          description: 'Статус работы сервиса'
-          example: 'работает'
-          schema:
-            default: 'работает'
-            type: string
-            enum: ['работает', 'не работает', 'нестабильно']
+      summary: Создание сервиса
+      description: Регистрирует новый сервис в системе.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, description]
+              properties:
+                name:
+                  type: string
+                  example: 'Крутой сервис'
+                description:
+                  type: string
+                  example: 'Описание крутого сервиса'
+                status:
+                  type: string
+                  enum: ['работает', 'не работает', 'нестабильно']
+                  default: 'работает'
       responses:
         '201':
+          description: Сервис создан
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Service"
-          description: ''
-      tags:
-        - Сервисы
+
   /api/history/{service_id}/:
     get:
-      description: 'История изменений состояния работы сервиса.'
+      tags:
+        - История
+      summary: История изменений сервиса
+      description: Возвращает лог всех изменений состояния конкретного сервиса по его ID.
       parameters:
         - name: service_id
-          required: true
           in: path
-          description: 'ID сервиса'
-          example: 3
+          required: true
           schema:
             type: integer
+          example: 3
       responses:
         '200':
+          description: Список изменений
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/History'
-          description: ''
-      tags:
-        - История работы сервиса
+
   /api/{service_id}/{start_date}/{end_date}/:
     get:
-      operationId: Расчёт SLA
-      description: 'Информация о том сколько не работал сервис и расчёт SLA.'
+      tags:
+        - SLA
+      operationId: calculateSla
+      summary: Расчёт SLA
+      description: Вычисляет процент доступности и общее время простоя за период.
       parameters:
         - name: service_id
-          required: true
           in: path
-          description: 'ID сервиса'
-          example: 4
+          required: true
           schema:
             type: integer
         - name: start_date
-          required: true
           in: path
-          description: 'Начало периода'
+          required: true
+          schema:
+            type: string
+            format: date
           example: '2023-10-29'
-          schema:
-            type: string
         - name: end_date
-          required: true
           in: path
-          description: 'Конец периода'
-          example: '2023-11-13'
+          required: true
           schema:
             type: string
+            format: date
+          example: '2023-11-13'
       responses:
         '200':
+          description: Данные по SLA
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  Информация для сервиса:
+                  service_name:
                     type: string
-                    description: 'Название сервиса'
                     example: 'Fourth'
-                  Service level agreement(в процентах):
-                    type: integer
-                    description: 'SLA'
-                    example: '96.913'
-                  Общее время недоступности сервиса:
+                  sla_percentage:
+                    type: number
+                    format: float
+                    example: 96.913
+                  total_downtime:
                     type: string
-                    description: 'Общее время недоступности'
                     example: '0 месяцев, 1 дней, 10 часов, 12 минут, 31 секунд'
-          description: ''
-      tags:
-        - Service level agreement
 
 components:
   schemas:
-    Services:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-          example: '1'
-        name:
-          type: string
-          maxLength: 100
-          description: 'Название'
-          example: 'СAPI2'
-        status:
-          type: string
-          maxLength: 50
-          description: 'Состояние'
-          example: 'работает'
-        description:
-          type: string
-          description: 'Описание'
-          example: 'Крутой сервис'
     Service:
       type: object
       properties:
         id:
-          title: ID
-          type: integer
-          readOnly: true
-          example: 2
-        name:
-          title: Название сервиса
-          type: string
-          example: "Крутой сервис"
-          maxLength: 100
-        status:
-          title: Статус работы сервиса
-          type: string
-          example: "работает"
-        description:
-          title: Опсиание сервиса
-          type: string
-          example: "Описание крутого сервиса"
-    History:
-      type: object
-      properties:
-        id:
-          title: ID
           type: integer
           readOnly: true
           example: 1
         name:
-          title: Название сервиса
           type: string
-          example: "CAPI2"
           maxLength: 100
-        service_id:
-          title: ID сервиса
+          example: 'СAPI2'
+        status:
           type: string
+          example: 'работает'
+        description:
+          type: string
+          example: 'Крутой сервис'
+    
+    History:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        service_id:
+          type: integer
           example: 3
         status:
-          title: Статус работы сервиса
           type: string
-          example: "работает"
+          example: 'работает'
         last_modified:
-          title: Дата последнего изменения работы сервиса
           type: string
-          example: "12.11.2023 12:05:52"
+          format: date-time
+          example: "2023-11-12T12:05:52Z"
